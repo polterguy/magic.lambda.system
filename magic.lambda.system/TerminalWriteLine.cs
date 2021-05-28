@@ -42,6 +42,7 @@ namespace magic.lambda.system
 
             // Sending code to terminal process.
             await process.StandardInput.WriteLineAsync(cmd);
+            await process.StandardInput.WriteLineAsync("echo --waiting-for-input--");
         }
     }
 }
