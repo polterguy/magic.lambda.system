@@ -47,7 +47,9 @@ namespace magic.lambda.system
             if (_processes.ContainsKey(name))
                 throw new ArgumentException($"Terminal with name of '{name}' already exists");
 
-            var lambda = input.Children.FirstOrDefault(x => x.Name == ".lambda")?.Clone();
+            // Checking if we have STDOUT/STDERR callbacks.
+            var stdOut = input.Children.FirstOrDefault(x => x.Name == ".stdOut")?.Clone();
+            var stdErr = input.Children.FirstOrDefault(x => x.Name == ".stdErr")?.Clone();
 
             // Configuring our process.
             var startInfo = new ProcessStartInfo();
@@ -71,20 +73,31 @@ namespace magic.lambda.system
             // Starting process.
             var process = Process.Start(startInfo);
 
-            // Checking if we have a [.lambda] callback, and if so making sure we capture output.
-            if (lambda != null)
+            // Checking if we have a [.stdOut] callback, and if so making sure we capture output.
+            if (stdOut != null)
             {
                 process.OutputDataReceived += (sender, args) => 
                 {
-                    if (!string.IsNullOrEmpty(args.Data))
-                    {
-                        var exe = lambda.Clone();
-                        var argsToExe = new Node(".arguments");
-                        argsToExe.Add(new Node("cmd", args.Data));
-                        exe.Insert(0, argsToExe);
-                        var sign = _services.ServiceProvider.GetService(typeof(ISignaler)) as ISignaler;
-                        sign.SignalAsync("eval", exe).GetAwaiter().GetResult();
-                    }
+                    var exe = stdOut.Clone();
+                    var argsToExe = new Node(".arguments");
+                    argsToExe.Add(new Node("cmd", args.Data));
+                    exe.Insert(0, argsToExe);
+                    var sign = _services.ServiceProvider.GetService(typeof(ISignaler)) as ISignaler;
+                    sign.SignalAsync("eval", exe).GetAwaiter().GetResult();
+                };
+            }
+
+            // Checking if we have a [.err] callback, and if so making sure we capture output.
+            if (stdErr != null)
+            {
+                process.ErrorDataReceived += (sender, args) => 
+                {
+                    var exe = stdErr.Clone();
+                    var argsToExe = new Node(".arguments");
+                    argsToExe.Add(new Node("cmd", args.Data));
+                    exe.Insert(0, argsToExe);
+                    var sign = _services.ServiceProvider.GetService(typeof(ISignaler)) as ISignaler;
+                    sign.SignalAsync("eval", exe).GetAwaiter().GetResult();
                 };
             }
 
@@ -95,6 +108,7 @@ namespace magic.lambda.system
                 throw new ArgumentException($"Process with name of '{name}' already exists");
             }
             process.BeginOutputReadLine();
+            process.BeginErrorReadLine();
         }
     }
 }

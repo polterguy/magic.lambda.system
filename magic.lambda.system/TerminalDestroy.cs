@@ -36,6 +36,7 @@ namespace magic.lambda.system
 
             // Closing process.
             process.Close();
+            process.Dispose();
         }
     }
 }
