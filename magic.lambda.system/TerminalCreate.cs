@@ -51,6 +51,12 @@ namespace magic.lambda.system
             var stdOut = input.Children.FirstOrDefault(x => x.Name == ".stdOut")?.Clone();
             var stdErr = input.Children.FirstOrDefault(x => x.Name == ".stdErr")?.Clone();
 
+            // Retrieving working folder.
+            var workingFolder = input.Children.FirstOrDefault(x => x.Name == "folder")?.GetEx<string>() ?? "/";
+            var rootFolderNode = new Node();
+            signaler.Signal(".io.folder.root", rootFolderNode);
+            workingFolder = rootFolderNode.Get<string>() + workingFolder.TrimStart('/');
+
             // Configuring our process.
             var startInfo = new ProcessStartInfo();
             if (Environment.OSVersion.Platform == PlatformID.Unix || Environment.OSVersion.Platform == PlatformID.MacOSX)
@@ -69,21 +75,41 @@ namespace magic.lambda.system
             startInfo.RedirectStandardInput = true;
             startInfo.RedirectStandardError = true;
             startInfo.UseShellExecute = false;
+            startInfo.WorkingDirectory = workingFolder;
 
             // Starting process.
             var process = Process.Start(startInfo);
+            process.EnableRaisingEvents = true;
 
             // Checking if we have a [.stdOut] callback, and if so making sure we capture output.
             if (stdOut != null)
             {
                 process.OutputDataReceived += (sender, args) => 
                 {
+                    if (!string.IsNullOrEmpty(args.Data))
+                    {
+                        var exe = stdOut.Clone();
+                        var argsToExe = new Node(".arguments");
+                        argsToExe.Add(new Node("cmd", args.Data));
+                        exe.Insert(0, argsToExe);
+                        var sign = _services.ServiceProvider.GetService(typeof(ISignaler)) as ISignaler;
+                        using (var disposer = sign as IDisposable)
+                        {
+                            sign.SignalAsync("eval", exe).GetAwaiter().GetResult();
+                        }
+                    }
+                };
+                process.Exited += (sender, args) => 
+                {
                     var exe = stdOut.Clone();
                     var argsToExe = new Node(".arguments");
-                    argsToExe.Add(new Node("cmd", args.Data));
+                    argsToExe.Add(new Node("cmd", null));
                     exe.Insert(0, argsToExe);
                     var sign = _services.ServiceProvider.GetService(typeof(ISignaler)) as ISignaler;
-                    sign.SignalAsync("eval", exe).GetAwaiter().GetResult();
+                    using (var disposer = sign as IDisposable)
+                    {
+                        sign.SignalAsync("eval", exe).GetAwaiter().GetResult();
+                    }
                 };
             }
 
@@ -97,7 +123,10 @@ namespace magic.lambda.system
                     argsToExe.Add(new Node("cmd", args.Data));
                     exe.Insert(0, argsToExe);
                     var sign = _services.ServiceProvider.GetService(typeof(ISignaler)) as ISignaler;
-                    sign.SignalAsync("eval", exe).GetAwaiter().GetResult();
+                    using (var disposer = sign as IDisposable)
+                    {
+                        sign.SignalAsync("eval", exe).GetAwaiter().GetResult();
+                    }
                 };
             }
 
