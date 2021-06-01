@@ -71,6 +71,9 @@ namespace magic.lambda.system
             if (!TerminalCreate._processes.TryGetValue(name, out var process))
                 throw new ArgumentException($"Terminal with name of '{name}' was not found");
 
+            // Updating LastUsed value to make sure process stays alive.
+            process.LastUsed = DateTime.UtcNow;
+
             // Returning results to caller.
             return (process.Process, cmd);
         }

@@ -34,7 +34,7 @@ namespace magic.lambda.system
                 return; // Notice, we might come here if terminal was already destroyed using e.g. "exit" command in terminal itself.
 
             // Closing process.
-            process.Process.Close();
+            process.Process.Kill(); // Notice, I am not 100% certain if we should use Close or Kill here ...
             process.Process.Dispose();
             process.Scope.Dispose();
         }

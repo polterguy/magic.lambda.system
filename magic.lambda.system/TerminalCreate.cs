@@ -5,6 +5,7 @@
 
 using System;
 using System.Linq;
+using System.Threading;
 using System.Diagnostics;
 using System.Collections.Concurrent;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,14 +15,28 @@ using magic.signals.contracts;
 
 namespace magic.lambda.system
 {
+    /*
+     * Internal helper class to encapsulate a process, with its relevant fields.
+     */
+    internal class ProcessWrapper
+    {
+        public Process Process { get; set; }
+
+        public IServiceScope Scope { get; set; }
+
+        public DateTime LastUsed { get; set; }
+    }
+
     /// <summary>
     /// [system.terminal.create] slot that allows you to create a terminal on your server.
     /// </summary>
     [Slot(Name = "system.terminal.create")]
     public class TerminalCreate : ISlot
     {
-        internal static readonly ConcurrentDictionary<string, (Process Process, IServiceScope Scope)> _processes = new ConcurrentDictionary<string, (Process, IServiceScope)>();
+        internal static readonly ConcurrentDictionary<string, ProcessWrapper> _processes = new ConcurrentDictionary<string, ProcessWrapper>();
+        readonly static object _locker = new object();
         readonly IServiceProvider _services;
+        static Timer _timer;
 
         /// <summary>
         /// Constructor needed to retrieve service provider to create ISignaler during callbacks.
@@ -56,31 +71,44 @@ namespace magic.lambda.system
                 if (si.StdOut != null)
                     process.OutputDataReceived += (sender, args) => ExecuteCallback(scope, si.StdOut, args.Data);
 
+                // Capturing STDERROR
+                if (si.StdErr != null)
+                    process.ErrorDataReceived += (sender, args) => ExecuteCallback(scope, si.StdErr, args.Data);
+
                 // Capturing exit.
                 process.Exited += (sender, args) =>
                 {
                     ExecuteCallback(scope, si.StdOut, null, true);
-                    _processes.TryRemove(si.Name, out var _);
+                    _processes.TryRemove(si.Name, out var disposable);
+
+                    // House cleaning.
+                    disposable.Process.Dispose();
+                    disposable.Scope.Dispose();
                 };
 
-                if (si.StdErr != null)
-                    process.ErrorDataReceived += (sender, args) => ExecuteCallback(scope, si.StdErr, args.Data);
-
                 // Adding process to dictionary such that we can later reference it.
-                if (!_processes.TryAdd(si.Name, (process, scope)))
+                if (!_processes.TryAdd(si.Name, new ProcessWrapper
                 {
-                    process.Close();
+                    Process = process,
+                    Scope = scope,
+                    LastUsed = DateTime.UtcNow
+                }))
                     throw new ArgumentException($"Process with name of '{si.Name}' already exists");
-                }
+
+                // Making sure we subscribe to both read std output line and read std error line.
                 process.BeginOutputReadLine();
                 process.BeginErrorReadLine();
             }
             catch
             {
+                process.Kill(); // Notice, I am not 100% certain if we should use Close or Kill here ...
                 process.Dispose();
                 scope.Dispose();
                 throw;
             }
+
+            // Ensuring we create our "close all unreferenced terminal" timer.
+            EnsureTimer();
         }
 
         #region [ -- Private helper methods -- ]
@@ -160,6 +188,40 @@ namespace magic.lambda.system
 
             // Returning start info to caller.
             return (startInfo, name, stdOut, stdErr);
+        }
+
+        /*
+         * Responsible for creating the timer that checks all terminal to see if they
+         * had activity in the last 30 minutes, and if not, closing the process.
+         *
+         * This is important to avoid having hanging terminals on the server, in case
+         * the client loose internet connection, experience browser crash, or something similar.
+         */
+        void EnsureTimer()
+        {
+            if (_timer != null)
+                return;
+            lock (_locker)
+            {
+                if (_timer != null)
+                    return;
+                _timer = new Timer((state) => {
+                    foreach (var idx in _processes.Keys)
+                    {
+                        if (_processes.TryGetValue(idx, out var process))
+                        {
+                            if (process.LastUsed.AddMinutes(30) < DateTime.UtcNow)
+                            {
+                                // Process has not been used for 30 minutes, hence closing it and disposing objects.
+                                _processes.TryRemove(idx, out var _);
+                                process.Process.Close();
+                                process.Process.Dispose();
+                                process.Scope.Dispose();
+                            }
+                        }
+                    }
+                }, null, 600000, 600000);
+            }
         }
 
         #endregion
