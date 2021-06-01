@@ -18,14 +18,46 @@ namespace magic.lambda.system
     /// [system.terminal.write-line] slot that allows you to write a line to a previously opened terminal bash process.
     /// </summary>
     [Slot(Name = "system.terminal.write-line")]
-    public class TerminalWriteLine : ISlotAsync
+    public class TerminalWriteLine : ISlotAsync, ISlot
     {
         /// <summary>
         /// Slot implementation.
         /// </summary>
         /// <param name="signaler">Signaler that raised signal.</param>
         /// <param name="input">Arguments to slot.</param>
+        public void Signal(ISignaler signaler, Node input)
+        {
+            // Extracting process to use and command to execute according to arguments given.
+            var args = GetArguments(input);
+
+            // Sending code to terminal process.
+            args.Process.StandardInput.WriteLine(args.Command);
+            args.Process.StandardInput.WriteLine("echo --waiting-for-input--");
+        }
+
+        /// <summary>
+        /// Slot implementation.
+        /// </summary>
+        /// <param name="signaler">Signaler that raised signal.</param>
+        /// <param name="input">Arguments to slot.</param>
+        /// <returns>Awaitable task</returns>
         public async Task SignalAsync(ISignaler signaler, Node input)
+        {
+            // Extracting process to use and command to execute according to arguments given.
+            var args = GetArguments(input);
+
+            // Sending code to terminal process.
+            await args.Process.StandardInput.WriteLineAsync(args.Command);
+            await args.Process.StandardInput.WriteLineAsync("echo --waiting-for-input--");
+        }
+
+        #region [ -- Private helper methods -- ]
+
+        /*
+         * Private method to extract command and terminal instance according
+         * to arguments given.
+         */
+        (Process Process, string Command) GetArguments(Node input)
         {
             // Retrieving name of terminal to write to.
             var name = input.GetEx<string>() ??
@@ -36,13 +68,13 @@ namespace magic.lambda.system
                 throw new ArgumentException("No [cmd] passed into terminal");
 
             // Finding process.
-            Process process;
-            if (!TerminalCreate._processes.TryGetValue(name, out process))
+            if (!TerminalCreate._processes.TryGetValue(name, out var process))
                 throw new ArgumentException($"Terminal with name of '{name}' was not found");
 
-            // Sending code to terminal process.
-            await process.StandardInput.WriteLineAsync(cmd);
-            await process.StandardInput.WriteLineAsync("echo --waiting-for-input--");
+            // Returning results to caller.
+            return (process, cmd);
         }
+
+        #endregion
     }
 }

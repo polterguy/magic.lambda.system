@@ -30,8 +30,7 @@ namespace magic.lambda.system
                 throw new ArgumentException("No name supplied to [system.terminal.destroy]");
 
             // Finding process and doing basic sanity check.
-            Process process;
-            if (!TerminalCreate._processes.TryRemove(name, out process))
+            if (!TerminalCreate._processes.TryRemove(name, out var process))
                 throw new ArgumentException($"Terminal with name of '{name}' was not found");
 
             // Closing process.
