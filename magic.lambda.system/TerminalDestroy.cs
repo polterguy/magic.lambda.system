@@ -31,11 +31,12 @@ namespace magic.lambda.system
 
             // Finding process and doing basic sanity check.
             if (!TerminalCreate._processes.TryRemove(name, out var process))
-                throw new ArgumentException($"Terminal with name of '{name}' was not found");
+                return; // Notice, we might come here if terminal was already destroyed using e.g. "exit" command in terminal itself.
 
             // Closing process.
-            process.Close();
-            process.Dispose();
+            process.Process.Close();
+            process.Process.Dispose();
+            process.Scope.Dispose();
         }
     }
 }

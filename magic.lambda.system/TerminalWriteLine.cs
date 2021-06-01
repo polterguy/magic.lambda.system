@@ -7,7 +7,6 @@ using System;
 using System.Linq;
 using System.Diagnostics;
 using System.Threading.Tasks;
-using System.Collections.Concurrent;
 using magic.node;
 using magic.node.extensions;
 using magic.signals.contracts;
@@ -15,7 +14,8 @@ using magic.signals.contracts;
 namespace magic.lambda.system
 {
     /// <summary>
-    /// [system.terminal.write-line] slot that allows you to write a line to a previously opened terminal bash process.
+    /// [system.terminal.write-line] slot that allows you to write a line to a previously
+    /// opened terminal process.
     /// </summary>
     [Slot(Name = "system.terminal.write-line")]
     public class TerminalWriteLine : ISlotAsync, ISlot
@@ -72,7 +72,7 @@ namespace magic.lambda.system
                 throw new ArgumentException($"Terminal with name of '{name}' was not found");
 
             // Returning results to caller.
-            return (process, cmd);
+            return (process.Process, cmd);
         }
 
         #endregion
