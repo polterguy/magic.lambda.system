@@ -197,7 +197,7 @@ namespace magic.lambda.system
          * This is important to avoid having hanging terminals on the server, in case
          * the client loose internet connection, experience browser crash, or something similar.
          */
-        void EnsureTimer()
+        static void EnsureTimer()
         {
             if (_timer != null)
                 return;
@@ -205,19 +205,17 @@ namespace magic.lambda.system
             {
                 if (_timer != null)
                     return;
-                _timer = new Timer((state) => {
+                _timer = new Timer((state) =>
+                {
                     foreach (var idx in _processes.Keys)
                     {
-                        if (_processes.TryGetValue(idx, out var process))
+                        if (_processes.TryGetValue(idx, out var process) && process.LastUsed.AddMinutes(30) < DateTime.UtcNow)
                         {
-                            if (process.LastUsed.AddMinutes(30) < DateTime.UtcNow)
-                            {
-                                // Process has not been used for 30 minutes, hence closing it and disposing objects.
-                                _processes.TryRemove(idx, out var _);
-                                process.Process.Close();
-                                process.Process.Dispose();
-                                process.Scope.Dispose();
-                            }
+                            // Process has not been used for 30 minutes, hence closing it and disposing objects.
+                            _processes.TryRemove(idx, out var _);
+                            process.Process.Close();
+                            process.Process.Dispose();
+                            process.Scope.Dispose();
                         }
                     }
                 }, null, 600000, 600000);
