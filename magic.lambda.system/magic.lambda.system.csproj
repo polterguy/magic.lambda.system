@@ -10,7 +10,7 @@
     <Description>System helper slots for Magic, giving you support for interacting with your operating system directly. To use package go to https://polterguy.github.io</Description>
     <PackageProjectUrl>https://github.com/polterguy/magic.lambda.system</PackageProjectUrl>
     <PackOnBuild>true</PackOnBuild>
-    <PackageVersion>9.2.1</PackageVersion>
+    <PackageVersion>9.6.6</PackageVersion>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/polterguy/magic.lambda.system.git</RepositoryUrl>
