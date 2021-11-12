@@ -108,7 +108,9 @@ namespace magic.lambda.system
                  * Returning result of process execution to caller, but only
                  * if user does not want a structured result.
                  */
-                if (!structured)
+                if (structured)
+                    input.Value = null;
+                else
                     input.Value = result.ToString();
             }
         }
