@@ -46,6 +46,17 @@ namespace magic.lambda.system
         async Task Execute(ISignaler signaler, Node input)
         {
             /*
+             * Checking if caller wants the result to be structured or not.
+             */
+            var structured = false;
+            var structureNode = input.Children.FirstOrDefault(x => x.Name == "structured");
+            if (structureNode != null)
+            {
+                structured = structureNode.GetEx<bool>();
+                structureNode.UnTie();
+            }
+
+            /*
              * Executing node to make sure we're able to correctly retrieve
              * arguments passed into execution of process.
              */
@@ -53,6 +64,9 @@ namespace magic.lambda.system
 
             // Retrieving arguments to invocation.
             var args = input.Children.FirstOrDefault()?.GetEx<string>();
+
+            // House cleaning ...
+            input.Clear();
 
             // Creating and decorating process.
             ProcessStartInfo startInfo = null;
@@ -72,17 +86,30 @@ namespace magic.lambda.system
             // Creating and starting process, making sure we clean up after ourselves.
             using (var process = Process.Start(startInfo))
             {
-                // Making sure we wait for process to finish.
+                // Used to create returned result if caller does not want to have a structured result returned.
                 var result = new StringBuilder();
+
+                // Making sure we wait for process to finish.
                 while (!process.StandardOutput.EndOfStream)
                 {
-                    if (result.Length != 0)
-                        result.Append("\r\n");
-                    result.Append(await process.StandardOutput.ReadLineAsync());
+                    if (structured)
+                    {
+                        input.Add(new Node(".", await process.StandardOutput.ReadLineAsync()));
+                    }
+                    else
+                    {
+                        if (result.Length != 0)
+                            result.Append("\r\n");
+                        result.Append(await process.StandardOutput.ReadLineAsync());
+                    }
                 }
 
-                // Returning result of process execution to caller.
-                input.Value = result.ToString();
+                /*
+                 * Returning result of process execution to caller, but only
+                 * if user does not want a structured result.
+                 */
+                if (!structured)
+                    input.Value = result.ToString();
             }
         }
 
