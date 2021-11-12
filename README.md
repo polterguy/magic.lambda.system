@@ -106,6 +106,19 @@ system.execute
    .:"-rw-r--r--  1 thomashansen  staff  1905 29 Oct 14:51 web.config"
 ```
 
+**Notice** - If you ommit the **[structured]** argument, or set its value to _"false"_, the result of the
+above invocation will return a single string.
+
+## Querying operating system version
+
+In addition to the above slots this project also contains the following slots.
+
+* __[system.os]__ - Returns description of your operating system
+* __[system.is-os]__ - Returns true if your underlaying operating system is of the specified type
+
+The last slot above takes an argument such as _"Windows"_, _"OSX_, _"Linux"_, etc, and will return true
+of the operating system you are currently running on belongs to the specified family of operating systems.
+
 ## Project website
 
 The source code for this repository can be found at [github.com/polterguy/magic.lambda.system](https://github.com/polterguy/magic.lambda.system), and you can provide feedback, provide bug reports, etc at the same place.
