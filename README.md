@@ -118,6 +118,12 @@ In addition to the above slots this project also contains the following slots.
 
 The last slot above takes an argument such as _"Windows"_, _"OSX_, _"Linux"_, etc, and will return true
 of the operating system you are currently running on belongs to the specified family of operating systems.
+Below is example usage of both.
+
+```
+system.is-os:OSX
+system.os
+```
 
 ## Project website
 
