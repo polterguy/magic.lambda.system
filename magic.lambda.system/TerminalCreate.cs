@@ -92,7 +92,7 @@ namespace magic.lambda.system
                     Scope = scope,
                     LastUsed = DateTime.UtcNow
                 }))
-                    throw new ArgumentException($"Process with name of '{si.Name}' already exists");
+                    throw new HyperlambdaException($"Process with name of '{si.Name}' already exists");
 
                 // Making sure we subscribe to both read std output line and read std error line.
                 process.BeginOutputReadLine();
@@ -149,11 +149,11 @@ namespace magic.lambda.system
         {
             // Retrieving name for terminal, which is needed later to reference it.
             var name = input.GetEx<string>() ?? 
-                throw new ArgumentException("No name supplied to [system.terminal.create]");
+                throw new HyperlambdaException("No name supplied to [system.terminal.create]");
 
             // Retrieving name of process that we can use later to reference it.
             if (_processes.ContainsKey(name))
-                throw new ArgumentException($"Terminal with name of '{name}' already exists");
+                throw new HyperlambdaException($"Terminal with name of '{name}' already exists");
 
             // Checking if we have STDOUT/STDERR callbacks.
             var stdOut = input.Children.FirstOrDefault(x => x.Name == ".stdOut")?.Clone();

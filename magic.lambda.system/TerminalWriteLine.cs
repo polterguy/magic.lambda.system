@@ -60,15 +60,15 @@ namespace magic.lambda.system
         {
             // Retrieving name of terminal to write to.
             var name = input.GetEx<string>() ??
-                throw new ArgumentException("No terminal name supplied to [system.terminal.write-line]");
+                throw new HyperlambdaException("No terminal name supplied to [system.terminal.write-line]");
 
             // Retrieving command to transmit to terminal.
             var cmd = input.Children.FirstOrDefault(x => x.Name == "cmd")?.GetEx<string>()?.Trim() ?? 
-                throw new ArgumentException("No [cmd] passed into terminal");
+                throw new HyperlambdaException("No [cmd] passed into terminal");
 
             // Finding process.
             if (!TerminalCreate._processes.TryGetValue(name, out var process))
-                throw new ArgumentException($"Terminal with name of '{name}' was not found");
+                throw new HyperlambdaException($"Terminal with name of '{name}' was not found");
 
             // Updating LastUsed value to make sure process stays alive.
             process.LastUsed = DateTime.UtcNow;

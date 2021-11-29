@@ -24,7 +24,7 @@ namespace magic.lambda.system
         {
             // Retrieving name of terminal to destroy.
             var name = input.GetEx<string>() ??
-                throw new ArgumentException("No name supplied to [system.terminal.destroy]");
+                throw new HyperlambdaException("No name supplied to [system.terminal.destroy]");
 
             // Finding process and doing basic sanity check.
             if (!TerminalCreate._processes.TryRemove(name, out var process))
