@@ -9,6 +9,7 @@ using System.Diagnostics;
 using System.Collections.Concurrent;
 using Microsoft.Extensions.DependencyInjection;
 using magic.node;
+using magic.node.contracts;
 using magic.node.extensions;
 using magic.signals.contracts;
 
@@ -35,15 +36,17 @@ namespace magic.lambda.system
         internal static readonly ConcurrentDictionary<string, ProcessWrapper> _processes = new ConcurrentDictionary<string, ProcessWrapper>();
         readonly static object _locker = new object();
         readonly IServiceProvider _services;
+        readonly IRootResolver _rootResolver;
         static Timer _timer;
 
         /// <summary>
         /// Constructor needed to retrieve service provider to create ISignaler during callbacks.
         /// </summary>
-        /// <param name="services"></param>
-        public TerminalCreate(IServiceProvider services)
+        /// <param name="services">Needed to resolver services.</param>
+        public TerminalCreate(IServiceProvider services, IRootResolver rootResolver)
         {
             _services = services;
+            _rootResolver = rootResolver;
         }
 
         /// <summary>
@@ -161,9 +164,7 @@ namespace magic.lambda.system
 
             // Retrieving working folder.
             var workingFolder = input.Children.FirstOrDefault(x => x.Name == "folder")?.GetEx<string>() ?? "/";
-            var rootFolderNode = new Node();
-            signaler.Signal(".io.folder.root", rootFolderNode);
-            workingFolder = rootFolderNode.Get<string>() + workingFolder.TrimStart('/');
+            workingFolder = _rootResolver.AbsolutePath(workingFolder.TrimStart('/'));
 
             // Configuring our process.
             var startInfo = new ProcessStartInfo();
