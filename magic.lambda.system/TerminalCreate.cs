@@ -57,7 +57,7 @@ namespace magic.lambda.system
         public void Signal(ISignaler signaler, Node input)
         {
             // Creating and decorating our start info.
-            var si = GetStartInfo(signaler, input);
+            var si = GetStartInfo(input);
 
             // Starting process.
             var process = Process.Start(si.StartInfo);
@@ -148,7 +148,7 @@ namespace magic.lambda.system
         /*
          * Private method to help extract arguments and create our ProcessStartInfo object.
          */
-        (ProcessStartInfo StartInfo, string Name, Node StdOut, Node StdErr) GetStartInfo(ISignaler signaler, Node input)
+        (ProcessStartInfo StartInfo, string Name, Node StdOut, Node StdErr) GetStartInfo(Node input)
         {
             // Retrieving name for terminal, which is needed later to reference it.
             var name = input.GetEx<string>() ?? 
