@@ -43,6 +43,7 @@ namespace magic.lambda.system
         /// Constructor needed to retrieve service provider to create ISignaler during callbacks.
         /// </summary>
         /// <param name="services">Needed to resolver services.</param>
+        /// <param name="rootResolver">Needed to resolver root folder on server.</param>
         public TerminalCreate(IServiceProvider services, IRootResolver rootResolver)
         {
             _services = services;
