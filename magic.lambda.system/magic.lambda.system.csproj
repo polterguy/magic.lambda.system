@@ -10,7 +10,7 @@
     <Description>System helper slots for Magic, giving you support for interacting with your operating system directly. To use package go to https://polterguy.github.io</Description>
     <PackageProjectUrl>https://github.com/polterguy/magic.lambda.system</PackageProjectUrl>
     <PackOnBuild>true</PackOnBuild>
-    <PackageVersion>10.0.18</PackageVersion>
+    <PackageVersion>10.0.19</PackageVersion>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/polterguy/magic.lambda.system.git</RepositoryUrl>
@@ -47,7 +47,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="6.0.0" />
-    <PackageReference Include="magic.node.extensions" Version="10.0.18" />
-    <PackageReference Include="magic.signals.contracts" Version="10.0.18" />
+    <PackageReference Include="magic.node.extensions" Version="10.0.19" />
+    <PackageReference Include="magic.signals.contracts" Version="10.0.19" />
   </ItemGroup>
 </Project>
